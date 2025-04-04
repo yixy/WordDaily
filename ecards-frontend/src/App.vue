@@ -4,7 +4,7 @@
     <div class="content">
       <router-view />
     </div>
-    <div class="nav-bar">
+    <div class="nav-bar" v-if="$route.path !== '/login'">
       <router-link to="/punch">打卡</router-link>
       <router-link to="/diction">词库</router-link>
       <router-link to="/mine">我的</router-link>

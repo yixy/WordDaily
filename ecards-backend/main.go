@@ -14,14 +14,30 @@ func main() {
 	// 中间件
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
-	// e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-	// 	AllowOrigins: []string{"*"}, // 允许所有域名访问，生产环境应限制为特定域名
-	// 	AllowMethods: []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodDelete},
-	// }))
+
+	// 用户登录验证中间件
+	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			// 检查用户是否登录
+			if !isUserLoggedIn(c) && c.Path() != "/login" {
+				return c.Redirect(http.StatusFound, "/noAuth")
+			}
+			return next(c)
+		}
+	})
 
 	// 路由
 	e.GET("/", func(c echo.Context) error {
 		return c.String(http.StatusOK, "Hello, World!")
+	})
+
+	// 登录路由
+	e.GET("/login", func(c echo.Context) error {
+		return c.String(http.StatusOK, "You have no permission to request!")
+	})
+
+	e.GET("/noAuth", func(c echo.Context) error {
+		return c.String(http.StatusOK, "You have no permission to request!")
 	})
 
 	// 添加导入路由
@@ -41,4 +57,11 @@ func main() {
 
 	// 启动服务器
 	e.Logger.Fatal(e.Start(":8081"))
+}
+
+// 模拟用户登录验证
+func isUserLoggedIn(c echo.Context) bool {
+	// 这里可以根据实际需求实现用户登录验证逻辑
+	// 例如检查session或token
+	return false
 }
