@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>词库 - 单词卡片</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            max-width: 390px;
+            margin: 0 auto;
+            background-color: #f5f5f5;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+        .status-bar {
+            height: 44px;
+            background-color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            position: fixed;
+            top: 0;
+            width: 100%;
+            max-width: 390px;
+            z-index: 1000;
+        }
+        .nav-bar {
+            height: 83px;
+            background-color: #ffffff;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            max-width: 390px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            border-top: 1px solid #e5e5e5;
+        }
+        .content {
+            margin-top: 44px;
+            margin-bottom: 83px;
+            min-height: calc(100vh - 127px);
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .word-item {
+            transition: all 0.3s ease;
+        }
+        .word-item.expanded {
+            background-color: #f8fafc;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- 状态栏 -->
+    <div class="status-bar">
+        <div class="text-sm font-medium">词库</div>
+        <div class="flex items-center space-x-2">
+            <i class="fas fa-signal"></i>
+            <i class="fas fa-wifi"></i>
+            <i class="fas fa-battery-full"></i>
+        </div>
+    </div>
+
+    <!-- 主要内容区域 -->
+    <div class="content">
+        <!-- 功能选择栏 -->
+        <div class="bg-white p-4">
+            <div class="flex justify-around">
+                <button class="px-4 py-2 text-blue-500 border-b-2 border-blue-500" onclick="showTab('category')">
+                    分类
+                </button>
+                <button class="px-4 py-2 text-gray-500" onclick="showTab('stats')">
+                    统计
+                </button>
+                <button class="px-4 py-2 text-gray-500" onclick="showTab('import')">
+                    导入
+                </button>
+            </div>
+        </div>
+
+        <!-- 分类内容 -->
+        <div id="category" class="tab-content active p-4">
+            <div class="flex flex-wrap gap-2 mb-4">
+                <span class="px-3 py-1 bg-blue-100 text-blue-600 rounded-full text-sm">自然景观</span>
+                <span class="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-sm">手机问题</span>
+                <span class="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-sm">日常用语</span>
+            </div>
+            <div class="space-y-2">
+                <div class="word-item p-4 bg-white rounded-lg shadow-sm" onclick="toggleWord(this)">
+                    <div class="flex justify-between items-center">
+                        <span class="font-medium">scenery</span>
+                        <i class="fas fa-chevron-down text-gray-400"></i>
+                    </div>
+                    <div class="hidden mt-2 text-gray-600">
+                        风景，景色
+                    </div>
+                </div>
+                <div class="word-item p-4 bg-white rounded-lg shadow-sm" onclick="toggleWord(this)">
+                    <div class="flex justify-between items-center">
+                        <span class="font-medium">forest</span>
+                        <i class="fas fa-chevron-down text-gray-400"></i>
+                    </div>
+                    <div class="hidden mt-2 text-gray-600">
+                        森林
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 统计内容 -->
+        <div id="stats" class="tab-content p-4">
+            <div class="grid grid-cols-2 gap-4">
+                <div class="bg-white p-4 rounded-lg shadow-sm">
+                    <div class="text-gray-500 text-sm">未学习单词</div>
+                    <div class="text-2xl font-bold mt-1">128</div>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow-sm">
+                    <div class="text-gray-500 text-sm">7天复习</div>
+                    <div class="text-2xl font-bold mt-1">56</div>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow-sm">
+                    <div class="text-gray-500 text-sm">30天复习</div>
+                    <div class="text-2xl font-bold mt-1">89</div>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow-sm">
+                    <div class="text-gray-500 text-sm">100天复习</div>
+                    <div class="text-2xl font-bold mt-1">234</div>
+                </div>
+            </div>
+            <div class="mt-4 bg-white p-4 rounded-lg shadow-sm">
+                <div class="text-gray-500 text-sm">单词总数</div>
+                <div class="text-2xl font-bold mt-1">507</div>
+            </div>
+        </div>
+
+        <!-- 导入内容 -->
+        <div id="import" class="tab-content p-4">
+            <button class="w-full py-3 bg-blue-500 text-white rounded-lg mb-4 hover:bg-blue-600 transition-colors">
+                批量导入
+            </button>
+            <textarea 
+                class="w-full h-48 p-4 bg-white rounded-lg shadow-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="# 自然景观
+scenery forest desert glacier plateau
+
+# 手机问题
+out_of_battery out_of_credit out_of_data top_up cracked crashed"
+            ></textarea>
+        </div>
+    </div>
+
+    <!-- 底部导航栏 -->
+    <div class="nav-bar">
+        <a href="punch.html" class="flex flex-col items-center">
+            <i class="fas fa-calendar-check text-gray-400 text-xl"></i>
+            <span class="text-xs text-gray-400 mt-1">打卡</span>
+        </a>
+        <a href="dictionary.html" class="flex flex-col items-center">
+            <i class="fas fa-book text-blue-500 text-xl"></i>
+            <span class="text-xs text-blue-500 mt-1">词库</span>
+        </a>
+        <a href="mine.html" class="flex flex-col items-center">
+            <i class="fas fa-user text-gray-400 text-xl"></i>
+            <span class="text-xs text-gray-400 mt-1">我的</span>
+        </a>
+    </div>
+
+    <script>
+        function showTab(tabId) {
+            // 隐藏所有标签页
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            // 显示选中的标签页
+            document.getElementById(tabId).classList.add('active');
+            
+            // 更新按钮样式
+            document.querySelectorAll('.nav-bar button').forEach(btn => {
+                btn.classList.remove('text-blue-500', 'border-b-2', 'border-blue-500');
+                btn.classList.add('text-gray-500');
+            });
+            event.target.classList.remove('text-gray-500');
+            event.target.classList.add('text-blue-500', 'border-b-2', 'border-blue-500');
+        }
+
+        function toggleWord(element) {
+            const content = element.querySelector('div:last-child');
+            const icon = element.querySelector('i');
+            
+            if (content.classList.contains('hidden')) {
+                content.classList.remove('hidden');
+                icon.classList.remove('fa-chevron-down');
+                icon.classList.add('fa-chevron-up');
+                element.classList.add('expanded');
+            } else {
+                content.classList.add('hidden');
+                icon.classList.remove('fa-chevron-up');
+                icon.classList.add('fa-chevron-down');
+                element.classList.remove('expanded');
+            }
+        }
+    </script>
+</body>
+</html> 
