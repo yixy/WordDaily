@@ -59,8 +59,24 @@ export default {
     toggleMeaning(word) {
       word.showMeaning = !word.showMeaning;
     },
-    importWords() {
-      // 导入单词的逻辑
+    async importWords() {
+      try {
+        const response = await fetch('http://localhost:8080/api/import', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ text: this.importText }),
+        });
+        if (response.ok) {
+          alert('导入成功');
+        } else {
+          alert('导入失败');
+        }
+      } catch (error) {
+        console.error('导入出错:', error);
+        alert(error.message);
+      }
     }
   }
 };
