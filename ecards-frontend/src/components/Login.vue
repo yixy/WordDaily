@@ -4,11 +4,21 @@
       <h2>登录</h2>
       <div class="input-group">
         <label for="username">用户名</label>
-        <input type="text" id="username" v-model="username" placeholder="请输入用户名">
+        <input
+          type="text"
+          id="username"
+          v-model="username"
+          placeholder="请输入用户名"
+        />
       </div>
       <div class="input-group">
         <label for="password">密码</label>
-        <input type="password" id="password" v-model="password" placeholder="请输入密码">
+        <input
+          type="password"
+          id="password"
+          v-model="password"
+          placeholder="请输入密码"
+        />
       </div>
       <button class="login-button" @click="login">登录</button>
     </div>
@@ -19,23 +29,36 @@
 export default {
   data() {
     return {
-      username: '',
-      password: ''
+      username: "",
+      password: "",
     };
   },
   methods: {
-    login() {
-      // 模拟登录逻辑
+    async login() {
       if (this.username && this.password) {
-        // 这里可以根据实际需求实现登录逻辑
-        // 例如发送登录请求并保存token
-        localStorage.setItem('isLoggedIn', 'true');
-        this.$router.push('/punch');
+        try {
+          console.log("Sending login request...");
+          const response = await this.$http.post("/api/login", {
+            username: this.username,
+            password: this.password,
+          });
+          console.log("Login response received:", response);
+          if (response.data.success) {
+            sessionStorage.setItem("isLoggedIn", "true");
+            sessionStorage.setItem("authToken", response.data.authToken);
+            this.$router.push("/punch");
+          } else {
+            alert("登录失败，请检查用户名和密码");
+          }
+        } catch (error) {
+          console.error("Login request failed:", error);
+          alert("登录请求失败，请稍后重试：" + error.message);
+        }
       } else {
-        alert('请输入用户名和密码');
+        alert("请输入用户名和密码");
       }
-    }
-  }
+    },
+  },
 };
 </script>
 

@@ -1,19 +1,47 @@
 <template>
   <div class="diction-container">
     <div class="tabs">
-      <button :class="{ active: activeTab === 'category' }" @click="activeTab = 'category'">分类</button>
-      <button :class="{ active: activeTab === 'statistics' }" @click="activeTab = 'statistics'">统计</button>
-      <button :class="{ active: activeTab === 'import' }" @click="activeTab = 'import'">导入</button>
+      <button
+        :class="{ active: activeTab === 'category' }"
+        @click="activeTab = 'category'"
+      >
+        分类
+      </button>
+      <button
+        :class="{ active: activeTab === 'statistics' }"
+        @click="activeTab = 'statistics'"
+      >
+        统计
+      </button>
+      <button
+        :class="{ active: activeTab === 'import' }"
+        @click="activeTab = 'import'"
+      >
+        导入
+      </button>
     </div>
     <div class="content">
       <div v-if="activeTab === 'category'" class="category">
         <div class="tags">
-          <span v-for="tag in tags" :key="tag" class="tag" @click="selectTag(tag)">{{ tag }}</span>
+          <span
+            v-for="tag in tags"
+            :key="tag"
+            class="tag"
+            @click="selectTag(tag)"
+            >{{ tag }}</span
+          >
         </div>
         <div class="word-list">
-          <div v-for="word in words" :key="word.word" class="word-item" @click="toggleMeaning(word)">
+          <div
+            v-for="word in words"
+            :key="word.word"
+            class="word-item"
+            @click="toggleMeaning(word)"
+          >
             <div class="word">{{ word.word }}</div>
-            <div v-if="word.showMeaning" class="meaning">{{ word.meaning }}</div>
+            <div v-if="word.showMeaning" class="meaning">
+              {{ word.meaning }}
+            </div>
           </div>
         </div>
       </div>
@@ -26,7 +54,10 @@
       </div>
       <div v-if="activeTab === 'import'" class="import">
         <button class="import-button" @click="importWords">批量导入</button>
-        <textarea v-model="importText" placeholder="输入单词和标签..."></textarea>
+        <textarea
+          v-model="importText"
+          placeholder="输入单词和标签..."
+        ></textarea>
       </div>
     </div>
   </div>
@@ -36,20 +67,29 @@
 export default {
   data() {
     return {
-      activeTab: 'category',
-      tags: ['自然景观', '手机问题'],
+      activeTab: "category",
+      tags: ["自然景观", "手机问题"],
       words: [
-        { word: 'Scenery', meaning: 'The natural features of a landscape considered in terms of their appearance, especially when picturesque.', showMeaning: false },
-        { word: 'Forest', meaning: 'A large area covered chiefly with trees and undergrowth.', showMeaning: false }
+        {
+          word: "Scenery",
+          meaning:
+            "The natural features of a landscape considered in terms of their appearance, especially when picturesque.",
+          showMeaning: false,
+        },
+        {
+          word: "Forest",
+          meaning: "A large area covered chiefly with trees and undergrowth.",
+          showMeaning: false,
+        },
       ],
       stats: {
         unlearned: 10,
         review7Days: 5,
         review30Days: 20,
         review100Days: 50,
-        total: 100
+        total: 100,
       },
-      importText: ''
+      importText: "",
     };
   },
   methods: {
@@ -61,24 +101,23 @@ export default {
     },
     async importWords() {
       try {
-        const response = await fetch('http://localhost:8080/api/import', {
-          method: 'POST',
+        const response = await this.$http.post("/api/import", {
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
           body: JSON.stringify({ text: this.importText }),
         });
         if (response.ok) {
-          alert('导入成功');
+          alert("导入成功");
         } else {
-          alert('导入失败');
+          alert("导入失败");
         }
       } catch (error) {
-        console.error('导入出错:', error);
         alert(error.message);
       }
-    }
-  }
+    },
+  },
 };
 </script>
 
