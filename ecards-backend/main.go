@@ -1,6 +1,7 @@
 package main
 
 import (
+	"ecards-backend/logger"
 	"fmt"
 	"net/http"
 	"time"
@@ -8,6 +9,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"go.uber.org/zap"
 )
 
 var jwtSecret = []byte("your-secret-key") // 从环境变量中读取更安全
@@ -15,7 +17,7 @@ var jwtSecret = []byte("your-secret-key") // 从环境变量中读取更安全
 func generateToken(username string) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"username": username,
-		"exp":      time.Now().Add(time.Minute * 1).Unix(), // Token有效期为24小时
+		"exp":      time.Now().Add(time.Hour * 24).Unix(), // Token有效期
 	})
 	return token.SignedString(jwtSecret)
 }
@@ -27,6 +29,38 @@ func main() {
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 
+	// 自定义日志记录中间件
+	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			// 记录请求日志
+			logger.LogInfo("Request Log:", 
+				zap.String("method", c.Request().Method),
+				zap.String("path", c.Request().URL.Path),
+				zap.Any("headers", c.Request().Header),
+				zap.Any("body", c.Request().Body),
+			)
+
+			// 继续处理请求
+			err := next(c)
+
+			// 记录响应日志
+			if err != nil {
+				logger.LogError("Response Log:", 
+					zap.Int("status", c.Response().Status),
+					zap.Any("headers", c.Response().Header()),
+					zap.Error(err),
+				)
+			} else {
+				logger.LogInfo("Response Log:", 
+					zap.Int("status", c.Response().Status),
+					zap.Any("headers", c.Response().Header()),
+				)
+			}
+
+			return err
+		}
+	})
+
 	// 用户登录验证中间件
 	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
@@ -35,7 +69,6 @@ func main() {
 				return next(c)
 			}
 			return c.JSON(http.StatusUnauthorized, map[string]bool{"success": false})
-			//return c.Redirect(http.StatusFound, "/api/auth")
 		}
 	})
 
@@ -69,23 +102,18 @@ func main() {
 		}
 	})
 
-	api.GET("/noAuth", func(c echo.Context) error {
-		return c.String(http.StatusOK, "You have no permission to request!")
-	})
-
 	// 添加导入路由
 	api.POST("/import", func(c echo.Context) error {
-		fmt.Println("Received import request")
 		var request struct {
 			Text string `json:"text"`
 		}
 		if err := c.Bind(&request); err != nil {
-			fmt.Println("Error binding request:", err)
+			logger.LogError("Error binding request:", zap.Error(err))
 			return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid request"})
 		}
 		// 打印接收到的文本内容
 		fmt.Println("Received text:", request.Text)
-		return c.JSON(http.StatusOK, map[string]string{"message": "Import successful"})
+		return c.JSON(http.StatusOK, map[string]interface{}{"success":true, "message": "Import successful"})
 	})
 
 	// 启动服务器
@@ -95,9 +123,14 @@ func main() {
 // 模拟用户登录验证
 func isUserLoggedIn(c echo.Context) bool {
 	tokenString := c.Request().Header.Get("Authorization")
-	if tokenString == "" {
-		return false
-	}
+	logger.LogDebug("TokenString:", zap.String("tokenString", tokenString))
+
+	// 检查是否包含 "Bearer " 前缀
+	if len(tokenString) > 7 && tokenString[:7] == "Bearer " {
+        tokenString = tokenString[7:] // 去掉 "Bearer " 前缀
+    } else {
+        return false // 如果没有 "Bearer " 前缀，直接返回 false
+    }
 
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		return jwtSecret, nil

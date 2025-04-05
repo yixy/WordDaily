@@ -56,7 +56,10 @@
         <button class="import-button" @click="importWords">批量导入</button>
         <textarea
           v-model="importText"
-          placeholder="输入单词和标签..."
+          placeholder="# 自然景观
+scenery forest desert glacier plateau
+# 手机问题
+out_of_battery out_of_credit out_of_data top_up cracked crashed"
         ></textarea>
       </div>
     </div>
@@ -101,14 +104,18 @@ export default {
     },
     async importWords() {
       try {
-        const response = await this.$http.post("/api/import", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
+        const response = await this.$http.post(
+          "/api/import",
+          {
+            text: this.importText,
           },
-          body: JSON.stringify({ text: this.importText }),
-        });
-        if (response.ok) {
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+        if (response.data.success) {
           alert("导入成功");
         } else {
           alert("导入失败");

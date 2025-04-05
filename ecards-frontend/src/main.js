@@ -15,6 +15,13 @@ http.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    // 记录请求日志
+    console.log("Request Log:", {
+      url: config.url,
+      method: config.method,
+      headers: config.headers,
+      data: config.data,
+    });
     return config;
   },
   (error) => {
@@ -24,6 +31,13 @@ http.interceptors.request.use(
 
 http.interceptors.response.use(
   (response) => {
+    // 记录响应日志
+    console.log("Response Log:", {
+      status: response.status,
+      statusText: response.statusText,
+      headers: response.headers,
+      data: response.data,
+    });
     return response;
   },
   (error) => {
@@ -32,6 +46,13 @@ http.interceptors.response.use(
       sessionStorage.removeItem("authToken");
       window.location.href = "/login";
     }
+    // 记录错误响应日志
+    console.error("Error Response Log:", {
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      headers: error.response?.headers,
+      data: error.response?.data,
+    });
     return Promise.reject(error);
   }
 );
