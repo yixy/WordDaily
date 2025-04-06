@@ -135,6 +135,25 @@ func main() {
 		fmt.Println("Received text:", request.Text)
 		return c.JSON(http.StatusOK, map[string]interface{}{"success":true, "message": "Import successful"})
 	})
+	
+	api.POST("/user", func(c echo.Context) error {
+		var request struct {
+			Username string `json:"username"`
+		}
+		if err := c.Bind(&request); err != nil {
+			logger.LogError("Error binding request:", zap.Error(err))
+			return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid request"})
+		}
+	
+		// 调用 user.go 中的方法
+		user, err := model.GetUserByUsername(request.Username)
+		if err != nil {
+			return c.JSON(http.StatusNotFound, map[string]string{"error": err.Error()})
+		}
+	
+		// 返回用户信息
+		return c.JSON(http.StatusOK, map[string]interface{}{"success":true,"user":user})
+	})
 
 	// 启动服务器
 	e.Logger.Fatal(e.Start(":8081"))

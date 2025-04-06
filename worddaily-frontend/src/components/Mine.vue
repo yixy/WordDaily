@@ -2,7 +2,12 @@
   <div class="mine-container">
     <div class="user-info">
       <h2 @click="switchUser">{{ username }}</h2>
-      <img :src="headshotUrl" alt="User Avatar" @click="confirmLogout" class="user-avatar" />
+      <img
+        :src="headshotUrl"
+        alt="User Avatar"
+        @click="confirmLogout"
+        class="user-avatar"
+      />
     </div>
   </div>
 </template>
@@ -11,8 +16,8 @@
 export default {
   data() {
     return {
-      username: '用户1',
-      headshotUrl: ''
+      username: "用户名",
+      headshotUrl: "",
     };
   },
   methods: {
@@ -20,18 +25,36 @@ export default {
       // 切换用户的逻辑
     },
     confirmLogout() {
-      if (confirm('确定要退出吗？')) {
-        this.$router.push('/login');
+      if (confirm("确定要退出吗？")) {
+        this.$router.push("/login");
       }
-    }
+    },
   },
   async created() {
-    // 假设从后端获取用户信息
-    const response = await fetch('/api/user');
-    const user = await response.json();
-    this.username = user.username;
-    this.headshotUrl = user.headshot ? `data:image/png;base64,${user.headshot}` : '';
-  }
+    try {
+      // 假设从后端获取用户信息
+      const response = await this.$http.post(
+        "/api/user",
+        {
+          username: "seven",
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      if (response.data.success) {
+        const user = response.data.user;
+        this.username = user.Username;
+        this.headshotUrl = user.Headshot
+          ? `data:image/png;base64,${user.Headshot}`
+          : "";
+      }
+    } catch (error) {
+      alert(error.message);
+    }
+  },
 };
 </script>
 
