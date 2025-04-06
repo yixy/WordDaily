@@ -25,5 +25,6 @@ CREATE TABLE IF NOT EXISTS user_words_tag_t (
 -- Create the user table
 CREATE TABLE IF NOT EXISTS user_t (
     username TEXT PRIMARY KEY,
-    public_key TEXT NOT NULL
+    public_key TEXT NOT NULL,
+    headshot BLOB
 );

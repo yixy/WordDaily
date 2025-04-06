@@ -1,18 +1,38 @@
 package main
 
 import (
-	"ecards-backend/logger"
 	"fmt"
 	"net/http"
 	"time"
+	"worddaily-backend/logger"
+	"worddaily-backend/model"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"github.com/spf13/viper"
 	"go.uber.org/zap"
 )
 
 var jwtSecret = []byte("your-secret-key") // 从环境变量中读取更安全
+
+func init() {
+	// 初始化 Viper 配置
+	viper.SetConfigName("config")
+	viper.SetConfigType("yaml")
+	viper.AddConfigPath(".")
+	if err := viper.ReadInConfig(); err != nil {
+		logger.LogError("Failed to read config file:", zap.Error(err))
+		panic(err)
+	}
+
+	// 初始化数据库
+	dsn := viper.GetString("database.dsn")
+	if err := model.InitDB(dsn); err != nil {
+		logger.LogError("Failed to initialize database:", zap.Error(err))
+		panic(err)
+	}
+}
 
 func generateToken(username string) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
