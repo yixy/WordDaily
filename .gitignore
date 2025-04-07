@@ -1,3 +1,2 @@
-db/*
 worddaily-frontend/node_modules/*
-*/*.db
+*.db
