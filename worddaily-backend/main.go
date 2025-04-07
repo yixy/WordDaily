@@ -99,6 +99,10 @@ func main() {
 		return c.String(http.StatusOK, "Hello, World!")
 	})
 
+	api.POST("/logout", func(c echo.Context) error {
+		return c.JSON(http.StatusUnauthorized, map[string]bool{"success": true})
+	})
+
 	// 登录路由
 	api.POST("/login", func(c echo.Context) error {
 		var request struct {
