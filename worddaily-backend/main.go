@@ -53,7 +53,7 @@ func main() {
 	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			// 记录请求日志
-			logger.LogInfo("Request Log:", 
+			logger.LogInfo("Request Log:",
 				zap.String("method", c.Request().Method),
 				zap.String("path", c.Request().URL.Path),
 				zap.Any("headers", c.Request().Header),
@@ -65,13 +65,13 @@ func main() {
 
 			// 记录响应日志
 			if err != nil {
-				logger.LogError("Response Log:", 
+				logger.LogError("Response Log:",
 					zap.Int("status", c.Response().Status),
 					zap.Any("headers", c.Response().Header()),
 					zap.Error(err),
 				)
 			} else {
-				logger.LogInfo("Response Log:", 
+				logger.LogInfo("Response Log:",
 					zap.Int("status", c.Response().Status),
 					zap.Any("headers", c.Response().Header()),
 				)
@@ -92,7 +92,7 @@ func main() {
 		}
 	})
 
-	api:= e.Group("/api")
+	api := e.Group("/api")
 
 	// 路由
 	api.GET("/", func(c echo.Context) error {
@@ -133,10 +133,30 @@ func main() {
 		}
 		// 打印接收到的文本内容
 		fmt.Println("Received text:", request.Text)
-		return c.JSON(http.StatusOK, map[string]interface{}{"success":true, "message": "Import successful"})
+		return c.JSON(http.StatusOK, map[string]interface{}{"success": true, "message": "Import successful"})
 	})
-	
-	api.POST("/user", func(c echo.Context) error {
+
+	// 新增用户修改接口
+	api.POST("/usermod", func(c echo.Context) error {
+		var request struct {
+			Username string `json:"username"`
+			Headshot string `json:"headshot"`
+		}
+		if err := c.Bind(&request); err != nil {
+			logger.LogError("Error binding request:", zap.Error(err))
+			return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid request"})
+		}
+
+		// 调用 user.go 中的方法更新用户头像
+		err := model.UpdateUserHeadshot(request.Headshot, request.Username)
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		}
+
+		return c.JSON(http.StatusOK, map[string]interface{}{"success": true, "message": "Headshot updated successfully"})
+	})
+
+	api.POST("/userquery", func(c echo.Context) error {
 		var request struct {
 			Username string `json:"username"`
 		}
@@ -144,15 +164,15 @@ func main() {
 			logger.LogError("Error binding request:", zap.Error(err))
 			return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid request"})
 		}
-	
+
 		// 调用 user.go 中的方法
 		user, err := model.GetUserByUsername(request.Username)
 		if err != nil {
 			return c.JSON(http.StatusNotFound, map[string]string{"error": err.Error()})
 		}
-	
+
 		// 返回用户信息
-		return c.JSON(http.StatusOK, map[string]interface{}{"success":true,"user":user})
+		return c.JSON(http.StatusOK, map[string]interface{}{"success": true, "user": user})
 	})
 
 	// 启动服务器
@@ -166,10 +186,10 @@ func isUserLoggedIn(c echo.Context) bool {
 
 	// 检查是否包含 "Bearer " 前缀
 	if len(tokenString) > 7 && tokenString[:7] == "Bearer " {
-        tokenString = tokenString[7:] // 去掉 "Bearer " 前缀
-    } else {
-        return false // 如果没有 "Bearer " 前缀，直接返回 false
-    }
+		tokenString = tokenString[7:] // 去掉 "Bearer " 前缀
+	} else {
+		return false // 如果没有 "Bearer " 前缀，直接返回 false
+	}
 
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		return jwtSecret, nil

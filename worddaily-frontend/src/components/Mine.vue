@@ -5,10 +5,11 @@
       <img
         :src="headshotUrl"
         alt="User Avatar"
-        @click="confirmLogout"
+        @click="changeHeadshot"
         class="user-avatar"
       />
     </div>
+    <input type="file" @change="handleFileUpload" ref="fileInput" style="display: none;" />
   </div>
 </template>
 
@@ -18,15 +19,50 @@ export default {
     return {
       username: "用户名",
       headshotUrl: "",
+      file: null,
     };
   },
   methods: {
     switchUser() {
       // 切换用户的逻辑
-    },
-    confirmLogout() {
       if (confirm("确定要退出吗？")) {
         this.$router.push("/login");
+      }
+    },
+    changeHeadshot() {
+      this.$refs.fileInput.click();
+    },
+    handleFileUpload(event) {
+      this.file = event.target.files[0];
+      if (this.file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const base64 = e.target.result.split(',')[1]; // 获取 base64 编码部分
+          this.updateHeadshot(base64);
+        };
+        reader.readAsDataURL(this.file);
+      }
+    },
+    async updateHeadshot(base64) {
+      try {
+        const response = await this.$http.post(
+          "/api/usermod",
+          {
+            username: this.username,
+            headshot: base64,
+          },
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+        if (response.data.success) {
+          this.headshotUrl = `data:image/png;base64,${base64}`;
+          alert("头像更新成功");
+        }
+      } catch (error) {
+        alert(error.message);
       }
     },
   },
@@ -34,7 +70,7 @@ export default {
     try {
       // 假设从后端获取用户信息
       const response = await this.$http.post(
-        "/api/user",
+        "/api/userquery",
         {
           username: "seven",
         },
