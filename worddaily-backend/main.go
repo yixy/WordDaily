@@ -8,13 +8,18 @@ import (
 	"worddaily-backend/model"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
+	"github.com/gorilla/sessions"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
 )
 
-var jwtSecret = []byte("your-secret-key") // 从环境变量中读取更安全
+var (
+	jwtSecret = []byte("your-secret-key") // 从环境变量中读取更安全
+	store     = sessions.NewCookieStore([]byte("your-secret-key"))
+)
 
 func init() {
 	// 初始化 Viper 配置
@@ -99,7 +104,19 @@ func main() {
 		return c.String(http.StatusOK, "Hello, World!")
 	})
 
+	// 登出
 	api.POST("/logout", func(c echo.Context) error {
+		session, err := store.Get(c.Request(), "sessionID")
+		if err != nil {
+			return c.JSON(http.StatusUnauthorized, map[string]bool{"success": false})
+		}
+
+		// 作废 session 信息
+		session.Options.MaxAge = -1
+		if err := session.Save(c.Request(), c.Response()); err != nil {
+			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to save session"})
+		}
+
 		return c.JSON(http.StatusUnauthorized, map[string]bool{"success": true})
 	})
 
@@ -113,17 +130,34 @@ func main() {
 			return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid request"})
 		}
 
-		// 模拟登录验证逻辑
-		if request.Username == "admin" && request.Password == "password" {
-			// 登录成功，设置用户登录状态
-			token, err := generateToken(request.Username)
-			if err != nil {
-				return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to generate token"})
-			}
-			return c.JSON(http.StatusOK, map[string]interface{}{"success": true, "authToken": token})
-		} else {
+		// 查询数据库验证用户名和密码
+		user, err := model.GetUserByUsername(request.Username)
+		if err != nil {
 			return c.JSON(http.StatusUnauthorized, map[string]bool{"success": false})
 		}
+		if user.UserPwd != request.Password {
+			return c.JSON(http.StatusUnauthorized, map[string]bool{"success": false})
+		}
+
+		// 登录成功，设置用户登录状态
+		token, err := generateToken(request.Username)
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to generate token"})
+		}
+
+		// 设置 session 信息
+		session, err := store.Get(c.Request(), "sessionID")
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to get session"})
+		}
+		session.Values["username"] = request.Username
+		session.Values["sessionID"] = generateSessionID()
+		session.Options.MaxAge = 86400 // 24小时
+		if err := session.Save(c.Request(), c.Response()); err != nil {
+			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to save session"})
+		}
+
+		return c.JSON(http.StatusOK, map[string]interface{}{"success": true, "authToken": token})
 	})
 
 	// 添加导入路由
@@ -202,4 +236,9 @@ func isUserLoggedIn(c echo.Context) bool {
 		return false
 	}
 	return true
+}
+
+// 辅助函数：生成 sessionID
+func generateSessionID() string {
+	return uuid.New().String()
 }

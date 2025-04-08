@@ -47,8 +47,6 @@ export default {
             sessionStorage.setItem("isLoggedIn", "true");
             sessionStorage.setItem("authToken", response.data.authToken);
             this.$router.push("/punch");
-          } else {
-            alert("登录失败，请检查用户名和密码");
           }
         } catch (error) {
           console.error("Login request failed:", error);

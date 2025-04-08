@@ -9,7 +9,12 @@
         class="user-avatar"
       />
     </div>
-    <input type="file" @change="handleFileUpload" ref="fileInput" style="display: none;" />
+    <input
+      type="file"
+      @change="handleFileUpload"
+      ref="fileInput"
+      style="display: none"
+    />
   </div>
 </template>
 
@@ -23,11 +28,13 @@ export default {
     };
   },
   methods: {
-    switchUser() {
-      // 切换用户的逻辑
-      if (confirm("确定要退出吗？")) {
-        this.$router.push("/login");
-      }
+    async switchUser() {
+      try {
+        // 切换用户的逻辑
+        if (confirm("确定要退出吗？")) {
+          const response = await this.$http.post("/api/logout");
+        }
+      } catch (error) {}
     },
     changeHeadshot() {
       this.$refs.fileInput.click();
@@ -37,7 +44,7 @@ export default {
       if (this.file) {
         const reader = new FileReader();
         reader.onload = (e) => {
-          const base64 = e.target.result.split(',')[1]; // 获取 base64 编码部分
+          const base64 = e.target.result.split(",")[1]; // 获取 base64 编码部分
           this.updateHeadshot(base64);
         };
         reader.readAsDataURL(this.file);
@@ -85,7 +92,7 @@ export default {
         this.username = user.Username;
         this.headshotUrl = user.Headshot
           ? `data:image/png;base64,${user.Headshot}`
-          : "";
+          : ""; // 修改默认值为空字符串，避免显示错误图片
       }
     } catch (error) {
       alert(error.message);
@@ -104,8 +111,8 @@ export default {
 }
 
 .user-avatar {
-  width: 50px;
-  height: 50px;
+  width: 250px;
+  height: 250px;
   border-radius: 50%;
   cursor: pointer;
 }
