@@ -1,8 +1,8 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
+	"strings"
 	"time"
 	"worddaily-backend/logger"
 	"worddaily-backend/model"
@@ -160,7 +160,7 @@ func main() {
 		return c.JSON(http.StatusOK, map[string]interface{}{"success": true, "authToken": token})
 	})
 
-	// 添加导入路由
+	// 批量导入单词
 	api.POST("/import", func(c echo.Context) error {
 		var request struct {
 			Text string `json:"text"`
@@ -169,8 +169,49 @@ func main() {
 			logger.LogError("Error binding request:", zap.Error(err))
 			return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid request"})
 		}
-		// 打印接收到的文本内容
-		fmt.Println("Received text:", request.Text)
+
+		lines := strings.Split(request.Text, "\n")
+		var currentTag string
+
+		for _, line := range lines {
+			line = strings.TrimSpace(line)
+			if strings.HasPrefix(line, "#") {
+				currentTag = strings.TrimSpace(line[1:])
+			} else if currentTag != "" {
+				words := strings.Fields(line)
+				for _, word := range words {
+					meaning, example, err := model.FetchWordMeaningAndExample(word)
+					if err != nil {
+						logger.LogError("Error fetching word meaning and example:", zap.Error(err))
+					}
+					session, err := store.Get(c.Request(), "sessionID")
+					if err != nil {
+						return c.JSON(http.StatusUnauthorized, map[string]bool{"success": false})
+					}
+					userName := session.Values["username"].(string)
+					w := model.Word{
+						Word:            word,
+						Example:         example,
+						Meaning:         meaning,
+						UserName:        userName,
+						WordStatus:      0,
+						WordTag:         currentTag,
+						LastStudiedDate: time.Now().Format("2006-01-02"),
+						LastStudiedTime: time.Now(),
+					}
+					err = model.DeleteWord(w)
+					if err != nil {
+						logger.LogError("Error delete word:", zap.Error(err))
+					}
+					_, err = model.InsertWord(w)
+					if err != nil {
+						logger.LogError("Error inserting word:", zap.Error(err))
+						continue
+					}
+				}
+			}
+		}
+
 		return c.JSON(http.StatusOK, map[string]interface{}{"success": true, "message": "Import successful"})
 	})
 
