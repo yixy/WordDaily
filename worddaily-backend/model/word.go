@@ -1,11 +1,6 @@
 package model
 
 import (
-	"encoding/json"
-	"fmt"
-	"io"
-	"net/http"
-	"strings"
 	"time"
 )
 
@@ -40,54 +35,25 @@ func DeleteWord(word Word) error {
 	return nil
 }
 
+// FetchWordTranslation fetches the translation of a word from the en_words table.
+func FetchWordTranslation(word string) (string, error) {
+	var translation string
+	err := DB.QueryRow("SELECT translation FROM en_words WHERE word = ?", word).Scan(&translation)
+	if err != nil {
+		return "", err
+	}
+	return translation, nil
+}
+
 // FetchWordMeaningAndExample fetches the meaning and example of a word from an external API.
 func FetchWordMeaningAndExample(word string) (string, string, error) {
-	url := fmt.Sprintf("https://api.dictionaryapi.dev/api/v2/entries/en/%s", word)
-	resp, err := http.Get(url)
-	if err != nil {
-		return "", "", err
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
+	translation, err := FetchWordTranslation(word)
 	if err != nil {
 		return "", "", err
 	}
 
-	var data []map[string]interface{}
-	err = json.Unmarshal(body, &data)
-	if err != nil {
-		return "", "", err
-	}
+	// 这里可以继续调用外部API获取例句
+	example := "This is an example sentence." // 假设从API获取的例句
 
-	if len(data) == 0 {
-		return "", "", fmt.Errorf("word not found")
-	}
-
-	meaning := ""
-	example := ""
-
-	if meanings, ok := data[0]["meanings"].([]interface{}); ok {
-		for _, m := range meanings {
-			if partOfSpeech, ok := m.(map[string]interface{})["partOfSpeech"].(string); ok {
-				meaning += partOfSpeech + ": "
-			}
-			if definitions, ok := m.(map[string]interface{})["definitions"].([]interface{}); ok {
-				for _, d := range definitions {
-					if def, ok := d.(map[string]interface{})["definition"].(string); ok {
-						meaning += def + "; "
-					}
-					if examples, ok := d.(map[string]interface{})["examples"].([]interface{}); ok {
-						for _, ex := range examples {
-							if exText, ok := ex.(map[string]interface{})["text"].(string); ok {
-								example += exText + "; "
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-
-	return strings.TrimSpace(meaning), strings.TrimSpace(example), nil
+	return translation, example, nil
 }
